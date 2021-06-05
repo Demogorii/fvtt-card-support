@@ -1,17 +1,23 @@
 Hooks.on("decks.ready", () => {
   //Go through game.decks and make and register a setting for each one
   for (let deckID of Object.keys(game.decks.decks)) {
-    game.settings.register("cardsupport", `${deckID}-settings`, {
-      config: false,
-      scope: "world",
-      type: Object,
-      default: {
-        deckImg: "",
-        drawCards: [],
-        viewDeck: [],
-        viewDiscard: [],
-      },
-    });
+
+    try{
+      game.settings.get("cardsupport", `${deckID}.settings`);
+    }
+    catch(err){
+      game.settings.register("cardsupport", `${deckID}.settings`, {
+        config: false,
+        scope: "world",
+        type: Object,
+        value: {
+          deckImg: "worlds/" + game.data.world.name + "/Decks/" + deckID + "/deckimg.png",
+          drawCards: [],
+          viewDeck: [],
+          viewDiscard: []
+        }
+      });
+    }
   }
 
   game.settings.registerMenu("cardsupport", "decksettings", {
@@ -41,7 +47,7 @@ class DeckSettingsForm extends FormApplication {
     });
   }
 
-  activateListeners(html) {
+  async activateListeners(html) {
     for (let deckID of Object.keys(game.decks.decks)) {
       html.find(`#${deckID}-draw`).click((ev) => {
         let playersettings = "";
@@ -52,18 +58,18 @@ class DeckSettingsForm extends FormApplication {
           let playerID = player["_id"];
           if (
             game.settings
-              .get("cardsupport", `${deckID}-settings`)
+              .get("cardsupport", `${deckID}.settings`)
               ["drawCards"].includes(playerID)
           ) {
             playersettings += `
             <p style="display:flex">
-            <span  style="flex: 2">${game.users.get(playerID).name}</span> 
+            <span  style="flex: 2">${game.users.get(playerID).name}</span>
             <input style="flex: 1" id=${playerID} type="checkbox" checked/>
             </p>`;
           } else {
             playersettings += `
             <p style="display:flex">
-            <span  style="flex: 2">${game.users.get(playerID).name}</span> 
+            <span  style="flex: 2">${game.users.get(playerID).name}</span>
             <input style="flex: 1" id=${playerID} type="checkbox" />
             </p>`;
           }
@@ -82,8 +88,8 @@ class DeckSettingsForm extends FormApplication {
               callback: async (html) => {
                 let oldSettings = game.settings.get(
                   "cardsupport",
-                  `${deckID}-settings`
-                );
+                  `${deckID}.settings`
+                )["value"];
                 let drawCardsSettings = [];
 
                 for (let player of Array.from(game.users)) {
@@ -95,11 +101,11 @@ class DeckSettingsForm extends FormApplication {
                   }
                 }
 
-                game.settings.set("cardsupport", `${deckID}-settings`, {
+                game.settings.set("cardsupport", `${deckID}.settings`, {
                   drawCards: drawCardsSettings,
                   deckImg: oldSettings.deckImg,
                   viewDeck: oldSettings.viewDeck,
-                  viewDiscard: oldSettings.viewDiscard,
+                  viewDiscard: oldSettings.viewDiscard
                 });
               },
             },
@@ -115,18 +121,18 @@ class DeckSettingsForm extends FormApplication {
           let playerID = player["_id"];
           if (
             game.settings
-              .get("cardsupport", `${deckID}-settings`)
+              .get("cardsupport", `${deckID}.settings`)
               ["viewDeck"].includes(playerID)
           ) {
             playersettings += `
             <p style="display:flex">
-            <span  style="flex: 2">${game.users.get(playerID).name}</span> 
+            <span  style="flex: 2">${game.users.get(playerID).name}</span>
             <input style="flex: 1" id=${playerID} type="checkbox" checked/>
             </p>`;
           } else {
             playersettings += `
             <p style="display:flex">
-            <span  style="flex: 2">${game.users.get(playerID).name}</span> 
+            <span  style="flex: 2">${game.users.get(playerID).name}</span>
             <input style="flex: 1" id=${playerID} type="checkbox" />
             </p>`;
           }
@@ -145,8 +151,8 @@ class DeckSettingsForm extends FormApplication {
               callback: async (html) => {
                 let oldSettings = game.settings.get(
                   "cardsupport",
-                  `${deckID}-settings`
-                );
+                  `${deckID}.settings`
+                )["value"];
                 let viewCardsSettings = [];
 
                 for (let player of Array.from(game.users)) {
@@ -158,7 +164,7 @@ class DeckSettingsForm extends FormApplication {
                   }
                 }
 
-                game.settings.set("cardsupport", `${deckID}-settings`, {
+                game.settings.set("cardsupport", `${deckID}.settings`, {
                   drawCards: oldSettings.drawCards,
                   deckImg: oldSettings.deckImg,
                   viewDeck: viewCardsSettings,
@@ -178,18 +184,18 @@ class DeckSettingsForm extends FormApplication {
           }
           if (
             game.settings
-              .get("cardsupport", `${deckID}-settings`)
+              .get("cardsupport", `${deckID}.settings`)
               ["viewDiscard"].includes(playerID)
           ) {
             playersettings += `
             <p style="display:flex">
-            <span  style="flex: 2">${game.users.get(playerID).name}</span> 
+            <span  style="flex: 2">${game.users.get(playerID).name}</span>
             <input style="flex: 1" id=${playerID} type="checkbox" checked/>
             </p>`;
           } else {
             playersettings += `
             <p style="display:flex">
-            <span  style="flex: 2">${game.users.get(playerID).name}</span> 
+            <span  style="flex: 2">${game.users.get(playerID).name}</span>
             <input style="flex: 1" id=${playerID} type="checkbox" />
             </p>`;
           }
@@ -208,8 +214,8 @@ class DeckSettingsForm extends FormApplication {
               callback: async (html) => {
                 let oldSettings = game.settings.get(
                   "cardsupport",
-                  `${deckID}-settings`
-                );
+                  `${deckID}.settings`
+                )["value"];
                 let discardCardsSettings = [];
 
                 for (let player of Array.from(game.users)) {
@@ -221,7 +227,7 @@ class DeckSettingsForm extends FormApplication {
                   }
                 }
 
-                game.settings.set("cardsupport", `${deckID}-settings`, {
+                game.settings.set("cardsupport", `${deckID}.settings`, {
                   drawCards: oldSettings.drawCards,
                   deckImg: oldSettings.deckImg,
                   viewDeck: oldSettings.viewDeck,

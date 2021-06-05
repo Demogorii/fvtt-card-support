@@ -45,7 +45,7 @@ export class Deck {
         JSON.stringify(game.decks.decks)
       );
       //@ts-ignore
-      for (let user of game.users.entities) {
+      for (let user of game.users.entries) {
         if (user.isSelf) {
           continue;
         }
@@ -58,7 +58,7 @@ export class Deck {
     } else {
       let msg = {
         type: "UPDATESTATE",
-        playerID: game.users.find((el) => el.isGM && el.active).id,
+        playerID: game.users.find((el) => el.isGM && el.data.active).id,
         deckID: this.deckID,
       };
       //@ts-ignore
@@ -111,7 +111,7 @@ export class Deck {
       this._state = duplicate(this._cards);
       this._discard = [];
       //delete placed cards
-      let tileCards = canvas.background.placeables
+      let tileCards = canvas.tiles.placeables
         .filter((tile) => {
           let cardId = tile.getFlag(mod_scope, "cardID");
           if (cardId) {
@@ -123,7 +123,7 @@ export class Deck {
         .map((t) => t.data._id);
       await canvas.scene.deleteEmbeddedEntity("Tile", tileCards);
       //@ts-ignore
-      for (let user of game.users.contents) {
+      for (let user of game.users.entries) {
         if (user.isSelf) {
           ui["cardHotbar"].populator.resetDeck(this.deckID);
         } else {
@@ -287,13 +287,13 @@ export class Decks {
             card == cardId;
         });
     }
-  
+
     deckDiscardCheck(cardId,deckId) {
         return this.get(deckId)._state.filter(card => {
             card == cardId;
         });
     }
-  
+
     deckHandCheck(cardId,deckId) {
         //returns true if the specified card is in the player's hand
     } */
@@ -354,32 +354,38 @@ export class Decks {
       if (typeof ForgeVTT != "undefined" && ForgeVTT.usingTheForge) {
         src = "forgevtt";
       }
-      let target = `worlds/${game.world.data.name}/Decks/${deckfolderId}/`;
-      
-      //check for directory and create it if not found
-      try {
-      let result = await FilePicker.browse(src, target)
-      }
-      catch(err) {
-        console.log("error caught, directory does not exist");
+      let target = `worlds/${game.world.name}/Decks/${deckfolderId}/`;
+      let result = await FilePicker.browse(src, target);
+      if (result.target != target) {
         await FilePicker.createDirectory(src, target, {});
       }
-
-
       //Deal with Deck Img
       let deckImgPath = await uploadFile(target, deckImg);
       //Register the setting for the new deck
-      game.settings.register("cardsupport", `${deckfolderId}-settings`, {
+      game.settings.register("cardsupport", `${deckfolderId}.settings`, {
         config: false,
         scope: "world",
         type: Object,
-        default: {
+        value: {
           deckImg: deckImgPath,
           drawCards: [],
           viewDeck: [],
-          viewDiscard: [],
-        },
+          viewDiscard: []
+        }
       });
+
+      game.settings.set("cardsupport", `${deckfolderId}.settings`, {
+        config: false,
+        scope: "world",
+        type: Object,
+        value: {
+          deckImg: deckImgPath,
+          drawCards: [],
+          viewDeck: [],
+          viewDiscard: []
+        }
+      });
+
       //Create a new deck object
       //Read deck.yaml
       const deckyaml = jsyaml.safeLoadAll(
@@ -422,6 +428,7 @@ export class Decks {
         }
       }
       this.decks[deckfolderId] = new Deck(deckfolderId);
+
       ui.notifications.info("Finished Uploading Deck!");
       resolve(deckfolderId);
     });
@@ -432,7 +439,7 @@ export class Decks {
   createByImages(deckName, files, cardBack, deckImg) {
     return new Promise(async (resolve, reject) => {
       //If DeckFolder doesn't exist create it
-      let DecksFolderID = game.folders.find((el) => el.data.name == "Decks")?.id;
+      let DecksFolderID = game.folders.find((el) => el.name == "Decks")?.id;
       if (!DecksFolderID) {
         DecksFolderID = await Folder.create({
           name: "Decks",
@@ -453,28 +460,35 @@ export class Decks {
       if (typeof ForgeVTT != "undefined" && ForgeVTT.usingTheForge) {
         src = "forgevtt";
       }
-      let target = `worlds/${game.world.data.name}/Decks/${deckfolderId}/`;
-      //check for directory and create it if not found
-      try {
-        let result = await FilePicker.browse(src, target)
-        }
-      catch(err) {
-        console.log("error caught, directory does not exist");
+      let target = `worlds/${game.world.name}/Decks/${deckfolderId}/`;
+      let result = await FilePicker.browse(src, target);
+      if (result.target != target) {
         await FilePicker.createDirectory(src, target, {});
       }
       //Deal with Deck Img
       let deckImgPath = await uploadFile(target, deckImg);
       //Register the setting for the new deck
-      game.settings.register("cardsupport", `${deckfolderId}-settings`, {
+      game.settings.register("cardsupport", `${deckfolderId}.settings`, {
         config: false,
         scope: "world",
-        type: Object,
-        default: {
+        type: String,
+        default: JSON.stringify({
           deckImg: deckImgPath,
           drawCards: [],
           viewDeck: [],
-          viewDiscard: [],
-        },
+          viewDiscard: []
+        })
+      });
+      game.settings.set("cardsupport", `${deckfolderId}.settings`, {
+        config: false,
+        scope: "world",
+        type: Object,
+        value: {
+          deckImg: deckImgPath,
+          drawCards: [],
+          viewDeck: [],
+          viewDiscard: []
+        }
       });
       //uplaod CardBack
       let cardBackPath = await uploadFile(target, cardBack);

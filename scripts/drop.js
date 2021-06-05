@@ -78,26 +78,23 @@ Hooks.once("canvasReady", () => {
 
 async function handleDroppedFolder(folderId, x, y) {
   return new Promise(async (resolve, reject) => {
-    let t = canvas.background.worldTransform;
+    let t = canvas.tiles.worldTransform;
     const _x = (x - t.tx) / canvas.stage.scale.x;
     const _y = (y - t.ty) / canvas.stage.scale.y;
 
-    if (
-      game.settings.get("cardsupport", `${folderId}-settings`) &&
-      game.settings.get("cardsupport", `${folderId}-settings`)["deckImg"] != ""
+    if (game.settings.get("cardsupport", `${folderId}.settings`) != "" &&
+        game.settings.get("cardsupport", `${folderId}.settings`)["value"] != ""
     ) {
       let deckImgTex = await loadTexture(
-        game.settings.get("cardsupport", `${folderId}-settings`)["deckImg"]
+        game.settings.get("cardsupport", `${folderId}.settings`)["value"]["deckImg"]
       );
       Tile.create({
         name: game.folders.get(folderId).name,
-        img: game.settings.get("cardsupport", `${folderId}-settings`)[
-          "deckImg"
-        ], //`modules/cardsupport/assets/${Math.floor(Math.random() * 10) + 1}.png`,
+        img: game.settings.get("cardsupport", `${folderId}.settings`)["value"]["deckImg"], //`modules/cardsupport/assets/${Math.floor(Math.random() * 10) + 1}.png`,
         x: _x,
         y: _y,
-        width: deckImgTex.width, //350, //2, //350 for tile
-        height: deckImgTex.height, //400, //400 for tile
+        width: deckImgTex.width/2, //350, //2, //350 for tile
+        height: deckImgTex.height/2, //400, //400 for tile
         flags: {
           [mod_scope]: {
             deckID: folderId,
@@ -140,7 +137,7 @@ export async function handleDroppedCard(cardID, x, y, alt, sideUp = "front") {
   const _height = tex.height;
 
   // Project the tile Position
-  let t = canvas.background.worldTransform;
+  let t = canvas.tiles.worldTransform;
   const _x = (x - t.tx) / canvas.stage.scale.x;
   const _y = (y - t.ty) / canvas.stage.scale.y;
 
@@ -175,7 +172,7 @@ export async function handleTokenCard(cardID:string, x:number, y:number, alt:boo
   const _height = tex.height;
 
   // Project the tile Position
-  let t = canvas.background.worldTransform;
+  let t = canvas.tiles.worldTransform;
   const _x = (x - t.tx) / canvas.stage.scale.x
   const _y = (y - t.ty) / canvas.stage.scale.y
 
