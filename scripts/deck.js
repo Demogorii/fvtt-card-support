@@ -6,7 +6,7 @@ export class Deck {
    */
   constructor(folderID) {
     this.deckID = game.folders.get(folderID)._id;
-    this.deckName = game.folders.get(folderID).data.name;
+    this.deckName = game.folders.get(folderID).name;
     let state = game.folders.get(folderID).getFlag(mod_scope, "deckState");
     if (state == undefined) {
       let cardEntries = game.folders
@@ -45,7 +45,7 @@ export class Deck {
         JSON.stringify(game.decks.decks)
       );
       //@ts-ignore
-      for (let user of game.users.entries) {
+      for (let user of game.users.entries()) {
         if (user.isSelf) {
           continue;
         }
