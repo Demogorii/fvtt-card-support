@@ -66,15 +66,15 @@ async function deckHUD(td, html) {
         <h2 style="flex:4"> Draw with Replacement? </h2>
         <input type="checkbox" id="infiniteDraw"  style="flex:1"/>
       </div>
-      
+
       <div style="display:flex; flex-direction:row">
         <h2 style="flex:4"> Draw to Table? </h2>
         <input type="checkbox" id="drawTable"  style="flex:1"/>
-      </div>    
-    
+      </div>
+
       <input style="display:none" value="${td.x}" id="deckX">
       <input style="display:none" value="${td.y}" id="deckY">
-    </div>     
+    </div>
     `;
     new Dialog({
       title: "Take Cards",
@@ -161,9 +161,9 @@ async function deckHUD(td, html) {
     //ask how many cards they want to view, default value all cards
     let template = `
     <div>
-      <p> 
-        <h3> How many cards do you want to view? </h3> 
-        <input id="cardNum" value=${deck._state.length} type="number" style='width:50px;'/> 
+      <p>
+        <h3> How many cards do you want to view? </h3>
+        <input id="cardNum" value=${deck._state.length} type="number" style='width:50px;'/>
       </p>
     </div>
     `;
@@ -197,17 +197,17 @@ async function deckHUD(td, html) {
     let dealCardsDialog = `
     <h2> Deal Cards To Player </h2>
     <div style="display:flex; flex-direction:column">
-      <p style="display:flex"> 
-       <span style="flex:2"> Player: </span> 
-       <select id="player" style="flex:1">${players}</select> 
+      <p style="display:flex">
+       <span style="flex:2"> Player: </span>
+       <select id="player" style="flex:1">${players}</select>
       <p>
-      <p  style="display:flex"> 
+      <p  style="display:flex">
         <span style="flex:2"> Cards: </span>
-        <input id="numCards" type="number" style="width:50px; flex:1" value=1 /> 
+        <input id="numCards" type="number" style="width:50px; flex:1" value=1 />
       </p>
-      <p style="display:flex"> 
-        <span style="flex:2"> Deal with Replacement? </span> 
-        <input id="infinite" type="checkbox" style="flex:1"/> 
+      <p style="display:flex">
+        <span style="flex:2"> Deal with Replacement? </span>
+        <input id="infinite" type="checkbox" style="flex:1"/>
       </p>
     <div>
       `;

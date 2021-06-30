@@ -56,6 +56,17 @@ Hooks.on("ready", async () => {
     let deckImgFile = new File([deckImgBlob], "deckimg.png");
     game.decks.create(sampleDeckFile, deckImgFile);
   }
+
+  if (!game.user.isGM)
+  {
+    // request the river to gm
+
+    let msg = {
+      type: "REQUEST_RIVER"
+    };
+    //@ts-ignore
+    game.socket.emit("module.cardsupport", msg);
+  }
 });
 
 Hooks.on("renderMacroDirectory", (macroDir, html, _options) => {
@@ -89,7 +100,7 @@ Hooks.on("renderJournalDirectory", (_app, html, _data) => {
             <div class="form-group" style="display:flex; flex-direction:column">
               <h1 style="flex:2">${game.i18n.localize("DECK.IMPORT_SDF")}</h1>
               <input id="file" type="file" />
-              <p> Deck Img:    <input id="deckImg" type="file" /> </p>  
+              <p> Deck Img:    <input id="deckImg" type="file" /> </p>
             </div>
             `;
               new Dialog({

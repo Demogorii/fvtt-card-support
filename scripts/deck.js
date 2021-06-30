@@ -111,7 +111,7 @@ export class Deck {
       this._state = duplicate(this._cards);
       this._discard = [];
       //delete placed cards
-      let tileCards = canvas.tiles.placeables
+      let tileCards = canvas.background.placeables
         .filter((tile) => {
           let cardId = tile.getFlag(mod_scope, "cardID");
           if (cardId) {
@@ -123,7 +123,8 @@ export class Deck {
         .map((t) => t.data._id);
       await canvas.scene.deleteEmbeddedEntity("Tile", tileCards);
       //@ts-ignore
-      for (let user of game.users.entries) {
+      for (let entry of game.users.entries()) {
+        let user = entry[1];
         if (user.isSelf) {
           ui["cardHotbar"].populator.resetDeck(this.deckID);
         } else {
@@ -250,6 +251,35 @@ export class Deck {
         //@ts-ignore
         game.socket.emit("module.cardsupport", msg);
       }
+      resolve();
+    });
+  }
+
+  async addNewCardToRiverToAllPlayers() {
+    return new Promise(async (resolve, reject) => {
+      if (!game.user.isGM) {
+        let msg = {
+          type:"RIVER_ADD_REQ"
+        };
+        game.socket.emit("module.cardsupport", msg);
+        resolve();
+        return;
+      }
+      if (game.river.length > 3)
+        return;
+      let card = game.journal.get(await this.drawCard());
+      let cards = [];
+      cards.push(card);
+
+      let resolved = ui["cardHotbar"].populator.addToPlayerRiver(cards);
+      game.river.push(cards);
+
+      let msg = {
+        type: "SYNC_RIVER",
+        river: cards,
+      };
+      //@ts-ignore
+      game.socket.emit("module.cardsupport", msg);
       resolve();
     });
   }

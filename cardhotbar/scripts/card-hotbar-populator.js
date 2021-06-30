@@ -18,6 +18,16 @@ export class cardHotbarPopulator {
     await this.addToPlayerHand(journalEntries);
   }
 
+  async addToRiver(cardIDs) {
+    //console.log("Add to Hand CardIDs", cardIDs);
+    let journalEntries = [];
+    for (let id of cardIDs) {
+      journalEntries.push(game.journal.get(id));
+    }
+    //console.log("JEs", journalEntries)
+    await this.addToPlayerRiver(journalEntries);
+  }
+
   /**
    *
    * @param card type: JournalEntry[]
@@ -114,6 +124,179 @@ export class cardHotbarPopulator {
           ui.notifications.render();
           reject("No more room in hand!");
         }
+      }
+      this.macroMap = hand;
+      ui.cardHotbar.macros = ui.cardHotbar.getcardHotbarMacros();
+      await this._updateFlags();
+      ui.cardHotbar.render();
+      resolve();
+    });
+  }
+
+  async addToPlayerRiver(cards) {
+    //console.log("Player Hand Add Cards", cards)
+    return new Promise(async (resolve, reject) => {
+      let defaultSideUp = "front";
+
+      console.debug(defaultSideUp);
+      const maxSlot = 4;
+      let firstEmpty = this.getNextSlot();
+      if (firstEmpty === -1 || firstEmpty > maxSlot) {
+        ui.notifications.error("There is no room in the river!");
+        reject("No more room in river!");
+      }
+
+      //preserve existing cards
+      let hand = [];
+      hand.length = this.macroMap.length;
+      for (let slot = 0; slot <= this.macroMap.length; slot++) {
+        //hand.push(this.macroMap[slot])
+        hand[slot] = this.macroMap[slot];
+      }
+
+      for (let i = 0; i < cards.length; i++) {
+        if (maxSlot >= i + firstEmpty) {
+          console.log("Card In River: ", cards[i]);
+          let img = "";
+          if (cards[i]?.data != undefined) {
+            img =
+              defaultSideUp == "front"
+                ? cards[i].data.img
+                : cards[i].getFlag("world", "cardBack");
+            //img = defaultSideUp == "back" ? cards[i].getFlag("world","cardBack") : cards[i].data.img;
+            //console.debug("Card Hotbar | Invalid default card facing provided.");
+          } else {
+            // THIS ELSE IS VERY IMPORTANT DO NOT DELETE IT!! @ Norc
+            //(For Players, when reciving JE, they won't have the full JE, only the data prop, which means no .data object)
+            img =
+              defaultSideUp == "front"
+                ? cards[i].img
+                : cards[i].flags.world.cardBack;
+            //img = defaultSideUp == "back" ? cards[i].getFlag("world","cardBack") : cards[i].data.img;
+          }
+          let imgTex = await loadTexture(img);
+          let imgHeight = imgTex.height;
+          let imgWidth = imgTex.width;
+          let scaledWidth = (200 / imgHeight) * imgWidth;
+          let macro = await Macro.create({
+            name: `Player River Card`,
+            type: "script",
+            flags: {
+              world: {
+                cardID: cards[i]._id,
+                img:
+                  cards[i]?.data != undefined
+                    ? cards[i].data.img
+                    : cards[i].img,
+                cardBack:
+                  cards[i]?.data != undefined
+                    ? cards[i].data.flags.world.cardBack
+                    : cards[i].flags.world.cardBack,
+                sideUp: defaultSideUp,
+                scaledWidth: scaledWidth,
+                river: true,
+              },
+            },
+            scope: "global",
+            command: `
+                        new Dialog({
+                            title: "Player River Card",
+                            content: '<img src="${img}" />'
+                            ,
+                            buttons: {}
+                        }, {height:${imgHeight}, width:${imgWidth}}).render(true)
+                        `,
+            img: img,
+          });
+          hand[firstEmpty + i] = macro.id;
+          //hand.push(macro.id);
+        } else {
+          ui.notifications.error("Not enough space in the river. ");
+          ui.notifications.render();
+          reject("No more room in the river!");
+          break;
+        }
+      }
+      this.macroMap = hand;
+      ui.cardHotbar.macros = ui.cardHotbar.getcardHotbarMacros();
+      await this._updateFlags();
+      ui.cardHotbar.render();
+      resolve();
+    });
+  }
+
+  async syncRiver(cards) {
+    //console.log("Player Hand Add Cards", cards)
+    return new Promise(async (resolve, reject) => {
+      let defaultSideUp = "front";
+      let firstEmpty = this.getNextSlot();
+      //preserve existing cards
+      let hand = [];
+      hand.length = this.macroMap.length;
+      if (this.macroMap.length != 0)
+      {
+        ui.cardHotbar.getcardHotbarMacros().forEach(element =>
+          {
+            if (element.macro && element.macro.data.flags.world && !element.macro.data.flags.world.river)
+              hand.push(element.macro.data.flags.world.cardID);
+          });
+      }
+
+      for (let i = 0; i < cards.length; i++) {
+        console.log("Card In River: ", cards[i]);
+        let img = "";
+        if (cards[i]?.data != undefined) {
+          img =
+            defaultSideUp == "front"
+              ? cards[i].data.img
+              : cards[i].getFlag("world", "cardBack");
+          //img = defaultSideUp == "back" ? cards[i].getFlag("world","cardBack") : cards[i].data.img;
+          //console.debug("Card Hotbar | Invalid default card facing provided.");
+        } else {
+          // THIS ELSE IS VERY IMPORTANT DO NOT DELETE IT!! @ Norc
+          //(For Players, when reciving JE, they won't have the full JE, only the data prop, which means no .data object)
+          img =
+            defaultSideUp == "front"
+              ? cards[i].img
+              : cards[i].flags.world.cardBack;
+          //img = defaultSideUp == "back" ? cards[i].getFlag("world","cardBack") : cards[i].data.img;
+        }
+        let imgTex = await loadTexture(img);
+        let imgHeight = imgTex.height;
+        let imgWidth = imgTex.width;
+        let scaledWidth = (200 / imgHeight) * imgWidth;
+        let macro = await Macro.create({
+          name: `Player River Card`,
+          type: "script",
+          flags: {
+            world: {
+              cardID: cards[i]._id,
+              img:
+                cards[i]?.data != undefined
+                  ? cards[i].data.img
+                  : cards[i].img,
+              cardBack:
+                cards[i]?.data != undefined
+                  ? cards[i].data.flags.world.cardBack
+                  : cards[i].flags.world.cardBack,
+              sideUp: defaultSideUp,
+              scaledWidth: scaledWidth,
+              river: true,
+            },
+          },
+          scope: "global",
+          command: `
+                      new Dialog({
+                          title: "Player River Card",
+                          content: '<img src="${img}" />'
+                          ,
+                          buttons: {}
+                      }, {height:${imgHeight}, width:${imgWidth}}).render(true)
+                      `,
+          img: img,
+        });
+        hand[firstEmpty + i] = macro.id;
+        //hand.push(macro.id);
       }
       this.macroMap = hand;
       ui.cardHotbar.macros = ui.cardHotbar.getcardHotbarMacros();
@@ -256,7 +439,7 @@ export class cardHotbarPopulator {
     for (let mId of ui.cardHotbar.populator.macroMap) {
       const macro = game.macros.get(mId);
       const cardID = macro?.getFlag("world", "cardID");
-      if (game.decks.decks[deckID]._cards.includes(cardID)) {
+      if (game.decks.get(deckID)._cards.includes(cardID)) {
         let slot = this.macroMap.indexOf(macro.id);
         await this.chbUnsetMacro(slot);
       }

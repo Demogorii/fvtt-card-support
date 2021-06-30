@@ -133,28 +133,34 @@ async function deckHUD(td, html) {
   );
   html.find(".left").append(discardDiv);
   discardDiv.click((ev) => showDiscard());
+
+  const riverDiv = $(
+    '<i class="control-icon fa fa-hand-paper" aria-hidden="true" title="Draw To River"></i>'
+  );
+  html.find(".left").append(riverDiv);
+  riverDiv.click((ev) => addToRiver(td));
   // Reset Deck
   const resetDiv = $(
     '<i class="control-icon fa fa-undo" aria-hidden="true" title="Reset Deck (Original state, unshuffled, with all cards)"></i>'
   );
-  html.find(".left").append(resetDiv);
+  html.find(".right").append(resetDiv);
   resetDiv.click((ev) => resetDeck());
   // Shuffle
   const shuffleDiv = $(
     '<i class="control-icon fa fa-random" aria-hidden="true" title="Shuffle"></i>'
   );
-  html.find(".left").append(shuffleDiv);
+  html.find(".right").append(shuffleDiv);
   shuffleDiv.click((ev) => shuffleDeck());
   const viewDiv = $(
     '<i class="control-icon fa fa-eye" aria-hidden="true" title="View Deck"></i>'
   );
-  html.find(".left").append(viewDiv);
+  html.find(".right").append(viewDiv);
   viewDiv.click((ev) => viewDeck());
   if (game.user.isGM) {
     const dealDiv = $(
       '<i class="control-icon icon-deal" title="Deal to players"></i>'
     );
-    html.find(".left").append(dealDiv);
+    html.find(".right").append(dealDiv);
     dealDiv.click((ev) => dealCards());
   }
   let deck = game.decks.get(deckID);
@@ -175,15 +181,15 @@ async function deckHUD(td, html) {
         <h2 style="flex:4"> Draw with Replacement? </h2>
         <input type="checkbox" id="infiniteDraw"  style="flex:1"/>
       </div>
-      
+
       <div style="display:flex; flex-direction:row">
         <h2 style="flex:4"> Draw to Table? </h2>
         <input type="checkbox" id="drawTable"  style="flex:1"/>
-      </div>    
-    
+      </div>
+
       <input style="display:none" value="${td.x}" id="deckX">
       <input style="display:none" value="${td.y}" id="deckY">
-    </div>     
+    </div>
     `;
     new Dialog({
       title: "Take Cards",
@@ -257,6 +263,12 @@ async function deckHUD(td, html) {
       },
     }).render(true);
   };
+  const addToRiver = async (td) => {
+    // Ask How many cards they want to draw, default 1
+    // Tick Box to Draw to Table
+    game.playerdeck.addNewCardToRiverToAllPlayers();
+
+  };
   const showDiscard = async () => {
     let discardPile = [];
     for (let card of deck._discard) {
@@ -278,10 +290,10 @@ async function deckHUD(td, html) {
     //ask how many cards they want to view, default value all cards
     let template = `
     <div>
-      <p> 
-        <h3> How many cards do you want to view? </h3> 
-        <h3> Deck has ${deck._state.length} cards </h3> 
-        <input id="cardNum" value=${deck._state.length} type="number" style='width:50px;'/> 
+      <p>
+        <h3> How many cards do you want to view? </h3>
+        <h3> Deck has ${deck._state.length} cards </h3>
+        <input id="cardNum" value=${deck._state.length} type="number" style='width:50px;'/>
       </p>
     </div>
     `;
@@ -320,16 +332,16 @@ async function deckHUD(td, html) {
     let dealCardsDialog = `
     <h2> Deal Cards To Player </h2>
     <div style="display:flex; flex-direction:column">
-      <p style="display:flex; flex-direction:column"> 
+      <p style="display:flex; flex-direction:column">
         ${players}
       <p>
-      <p  style="display:flex"> 
+      <p  style="display:flex">
         <span style="flex:2"> Cards: </span>
-        <input id="numCards" type="number" style="width:50px; flex:1" value=1 /> 
+        <input id="numCards" type="number" style="width:50px; flex:1" value=1 />
       </p>
-      <p style="display:flex"> 
-        <span style="flex:2"> Deal with Replacement? </span> 
-        <input id="infinite" type="checkbox" style="flex:1"/> 
+      <p style="display:flex">
+        <span style="flex:2"> Deal with Replacement? </span>
+        <input id="infinite" type="checkbox" style="flex:1"/>
       </p>
     <div>
       `;

@@ -4,12 +4,54 @@ Hooks.on("ready", () => {
   //@ts-ignore
   game.socket.on("module.cardsupport", async (data) => {
     console.log("Socket Recieved: ", data);
+    if (data?.type == "SYNC_RIVER"){
+      if (game.user.isGM)
+        return;
+
+      await ui["cardHotbar"].populator.syncRiver(data.river);
+      return;
+    }
+    if (data?.type == "REQUEST_RIVER"){
+      if (!game.user.isGM)
+        return;
+
+      if (!game.river)
+      {
+        let macros = ui["cardHotbar"].getcardHotbarMacros();
+        let journalEntries = [];
+        macros.forEach(element =>
+          {
+              if (element.macro && element.macro.data.flags.world && element.macro.data.flags.world.river)
+              {
+                journalEntries.push(game.journal.get(element.macro.data.flags.world.cardID));
+              }
+          });
+        game.river = journalEntries;
+      }
+
+      let msg = {
+        type: "SYNC_RIVER",
+        river: game.river,
+      };
+        //@ts-ignore
+      game.socket.emit("module.cardsupport", msg);
+
+      return;
+    }
+    if (data?.type == "RIVER_ADD_REQ"){
+      if (!game.user.isGM)
+        return;
+
+      game.playerdeck.addNewCardToRiverToAllPlayers();
+      return;
+    }
     if (data.playerID != game.user.id) {
       return;
     }
     if (data?.type == "DEAL") {
       await ui["cardHotbar"].populator.addToPlayerHand(data.cards);
-    } else if (data?.type == "UPDATESTATE") {
+    }
+    else if (data?.type == "UPDATESTATE") {
       game.decks.get(data.deckID);
     } else if (data?.type == "SETDECKS") {
       game.decks.decks = JSON.parse(game.settings.get("cardsupport", "decks"));
@@ -38,7 +80,7 @@ Hooks.on("ready", () => {
             game.users.get(data.playerID).data.name
           } is requesting a card`,
           content: `
-          <img src="${img}"></img>        
+          <img src="${img}"></img>
         `,
           buttons: {
             accept: {

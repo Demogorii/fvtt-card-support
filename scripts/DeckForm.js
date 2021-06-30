@@ -25,9 +25,7 @@ export class DeckForm extends Application {
       html.find(`#${deck.deckID}-draw`).click(() => {
         if (
           !game.user.isGM &&
-          !game.settings
-            .get("cardsupport", `${deck.deckID}-settings`)
-            ["drawCards"].includes(game.user.id)
+          deck.deckName != "PlayerDeck"
         ) {
           ui.notifications.error("You don't have permission to do that.");
           return;
@@ -43,7 +41,7 @@ export class DeckForm extends Application {
             <input type="checkbox" id="infiniteDraw"  style="flex:1"/>
           </div>
           <input style="display:none" id="deckID" value=${deck.deckID} />
-        </div>     
+        </div>
         `;
         new Dialog({
           title: "Draw Cards",
@@ -91,11 +89,11 @@ export class DeckForm extends Application {
 
         let template = `
         <div>
-          <p> 
-          <h3> How many cards do you want to view? </h3> 
+          <p>
+          <h3> How many cards do you want to view? </h3>
           <h3> Deck has ${
             game.decks.get(deck.deckID)._state.length
-          } cards </h3> 
+          } cards </h3>
           <input id="numCards" value=1 type="number" style='width:50px;'/>
           </p>
         </div>
