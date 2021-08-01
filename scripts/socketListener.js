@@ -26,7 +26,7 @@ Hooks.on("ready", () => {
                 journalEntries.push(game.journal.get(element.macro.data.flags.world.cardID));
               }
           });
-        game.river = journalEntries;
+          game.river = journalEntries;
       }
 
       let msg = {
@@ -68,7 +68,7 @@ Hooks.on("ready", () => {
     } else if (data?.type == "REVEALCARD") {
       game.journal.get(data.cardID).show("image", true);
     } else if (data?.type == "DROP") {
-      handleDroppedCard(data.cardID, data.x, data.y, data.alt);
+      handleDroppedCard(data.cardID, data.x, data.y, data.alt, "front", data.river);
       //handleTokenCard(data.cardID, data.x, data.y, data.alt)
     } else if (data?.type == "TAKECARD") {
       let img = ui["cardHotbar"].macros[data.cardNum - 1].icon;

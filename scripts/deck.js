@@ -265,18 +265,33 @@ export class Deck {
         resolve();
         return;
       }
-      if (game.river.length > 3)
+
+      let macros = ui["cardHotbar"].getcardHotbarMacros();
+      let journalEntries = [];
+      macros.forEach(element =>
+        {
+            if (element.macro && element.macro.data.flags.world && element.macro.data.flags.world.river)
+            {
+              journalEntries.push(game.journal.get(element.macro.data.flags.world.cardID));
+            }
+        });
+      game.river = journalEntries;
+
+      if (game.river.length > 3){
+        ui.notifications.error("The River is full! Impossible to draw more cards...");
+        reject("The River is full!");
         return;
+      }
       let card = game.journal.get(await this.drawCard());
       let cards = [];
       cards.push(card);
 
       let resolved = ui["cardHotbar"].populator.addToPlayerRiver(cards);
-      game.river.push(cards);
+      game.river.push(card);
 
       let msg = {
         type: "SYNC_RIVER",
-        river: cards,
+        river: game.river,
       };
       //@ts-ignore
       game.socket.emit("module.cardsupport", msg);

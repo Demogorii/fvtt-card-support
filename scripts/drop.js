@@ -20,19 +20,21 @@ Hooks.once("canvasReady", () => {
         game.decks.getByCard(data.id) != undefined
       ) {
         if (game.user.isGM) {
+          let t = canvas.background.worldTransform;
           handleDroppedCard(
             data.id,
-            event.clientX,
-            event.clientY,
+            (event.clientX - t.tx) / canvas.stage.scale.x,
+            (event.clientY - t.ty) / canvas.stage.scale.y,
             event.altKey
           );
         } else {
+          let t = canvas.background.worldTransform;
           let msg = {
             type: "DROP",
             playerID: game.users.find((el) => el.isGM && el.active).id,
             cardID: data.id,
-            x: event.clientX,
-            y: event.clientY,
+            x: (event.clientX - t.tx) / canvas.stage.scale.x,
+            y: (event.clientY - t.ty) / canvas.stage.scale.y,
             alt: event.altKey,
           };
           //@ts-ignore
@@ -45,23 +47,27 @@ Hooks.once("canvasReady", () => {
         ) != undefined
       ) {
         if (game.user.isGM) {
+          let t = canvas.background.worldTransform;
           handleDroppedCard(
             game.macros.get(data.id).getFlag(mod_scope, "cardID"),
-            event.clientX,
-            event.clientY,
+            (event.clientX - t.tx) / canvas.stage.scale.x,
+            (event.clientY - t.ty) / canvas.stage.scale.y,
             event.altKey,
-            game.macros.get(data.id).getFlag(mod_scope, "sideUp")
+            game.macros.get(data.id).getFlag(mod_scope, "sideUp"),
+            game.macros.get(data.id).getFlag(mod_scope, "river")
           );
-          await ui["cardHotbar"].populator.chbUnsetMacro(data.cardSlot);
+          //await ui["cardHotbar"].populator.chbUnsetMacro(data.cardSlot);
           game.macros.get(data.id).delete();
         } else {
+          let t = canvas.background.worldTransform;
           let msg = {
             type: "DROP",
             playerID: game.users.find((el) => el.isGM && el.active).id,
             cardID: game.macros.get(data.id).getFlag(mod_scope, "cardID"),
-            x: event.clientX,
-            y: event.clientY,
+            x: (event.clientX - t.tx) / canvas.stage.scale.x,
+            y: (event.clientY - t.ty) / canvas.stage.scale.y,
             alt: event.altKey,
+            river: game.macros.get(data.id).getFlag(mod_scope, "river")
           };
           //@ts-ignore
           game.socket.emit("module.cardsupport", msg);
@@ -123,7 +129,7 @@ async function handleDroppedFolder(folderId, x, y) {
   });
 }
 
-export async function handleDroppedCard(cardID, x, y, alt, sideUp = "front") {
+export async function handleDroppedCard(cardID, x, y, alt, sideUp = "front", river = false) {
   let imgPath = "";
   if (alt || sideUp == "back") {
     imgPath = game.journal.get(cardID).getFlag(mod_scope, "cardBack");
@@ -136,17 +142,56 @@ export async function handleDroppedCard(cardID, x, y, alt, sideUp = "front") {
   const _width = tex.width;
   const _height = tex.height;
 
-  // Project the tile Position
-  let t = canvas.background.worldTransform;
-  const _x = (x - t.tx) / canvas.stage.scale.x;
-  const _y = (y - t.ty) / canvas.stage.scale.y;
-
   const cardScale = cardHotbarSettings.getCHBCardScale();
   console.debug(cardScale);
+
+
+  let slotsToRemove = [];
+  if (river)
+  {
+    let macros = ui["cardHotbar"].getcardHotbarMacros();
+    macros.forEach(element =>
+      {
+          if (element.macro && element.macro.data.flags.world && element.macro.data.flags.world.river && element.macro.data.flags.world.cardID === cardID)
+          {
+            if (!game.user.isGM)
+              ui["cardHotbar"].populator.chbUnsetMacro(element.slot);
+
+             slotsToRemove.push(element.slot);
+          }
+      });
+  }
+
+  if (river && game.user.isGM)
+  {
+    for(let i = 0; i < slotsToRemove.length; i++)
+    {
+      await ui["cardHotbar"].populator.chbUnsetMacro(slotsToRemove[i]);
+    }
+
+    let macros = ui["cardHotbar"].getcardHotbarMacros();
+    let journalEntries = [];
+    macros.forEach(element =>
+      {
+          if (element.macro && element.macro.data.flags.world && element.macro.data.flags.world.river)
+          {
+            journalEntries.push(game.journal.get(element.macro.data.flags.world.cardID));
+          }
+      });
+    game.river = journalEntries;
+
+    let msg = {
+      type: "SYNC_RIVER",
+      river: game.river,
+    };
+    //@ts-ignore
+    game.socket.emit("module.cardsupport", msg);
+  }
+
   await Tile.create({
     img: imgPath,
-    x: _x,
-    y: _y,
+    x: x,
+    y: y,
     width: _width * cardScale,
     height: _height * cardScale,
     flags: {

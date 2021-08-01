@@ -139,11 +139,22 @@ export class cardHotbarPopulator {
       let defaultSideUp = "front";
 
       console.debug(defaultSideUp);
-      const maxSlot = 4;
+
+      let riverCountInHand = 0;
+      let macros = ui.cardHotbar.macros;
+      macros.forEach(element =>
+      {
+          if (element.macro && element.macro.data.flags.world && element.macro.data.flags.world.river)
+          {
+             riverCountInHand++;
+          }
+      });
+
       let firstEmpty = this.getNextSlot();
-      if (firstEmpty === -1 || firstEmpty > maxSlot) {
+      if (firstEmpty === -1 || riverCountInHand > 3) {
         ui.notifications.error("There is no room in the river!");
         reject("No more room in river!");
+        return;
       }
 
       //preserve existing cards
@@ -155,73 +166,66 @@ export class cardHotbarPopulator {
       }
 
       for (let i = 0; i < cards.length; i++) {
-        if (maxSlot >= i + firstEmpty) {
-          console.log("Card In River: ", cards[i]);
-          let img = "";
-          if (cards[i]?.data != undefined) {
-            img =
-              defaultSideUp == "front"
-                ? cards[i].data.img
-                : cards[i].getFlag("world", "cardBack");
-            //img = defaultSideUp == "back" ? cards[i].getFlag("world","cardBack") : cards[i].data.img;
-            //console.debug("Card Hotbar | Invalid default card facing provided.");
-          } else {
-            // THIS ELSE IS VERY IMPORTANT DO NOT DELETE IT!! @ Norc
-            //(For Players, when reciving JE, they won't have the full JE, only the data prop, which means no .data object)
-            img =
-              defaultSideUp == "front"
-                ? cards[i].img
-                : cards[i].flags.world.cardBack;
-            //img = defaultSideUp == "back" ? cards[i].getFlag("world","cardBack") : cards[i].data.img;
-          }
-          let imgTex = await loadTexture(img);
-          let imgHeight = imgTex.height;
-          let imgWidth = imgTex.width;
-          let scaledWidth = (200 / imgHeight) * imgWidth;
-          let macro = await Macro.create({
-            name: `Player River Card`,
-            type: "script",
-            flags: {
-              world: {
-                cardID: cards[i]._id,
-                img:
-                  cards[i]?.data != undefined
-                    ? cards[i].data.img
-                    : cards[i].img,
-                cardBack:
-                  cards[i]?.data != undefined
-                    ? cards[i].data.flags.world.cardBack
-                    : cards[i].flags.world.cardBack,
-                sideUp: defaultSideUp,
-                scaledWidth: scaledWidth,
-                river: true,
-              },
-            },
-            scope: "global",
-            command: `
-                        new Dialog({
-                            title: "Player River Card",
-                            content: '<img src="${img}" />'
-                            ,
-                            buttons: {}
-                        }, {height:${imgHeight}, width:${imgWidth}}).render(true)
-                        `,
-            img: img,
-          });
-          hand[firstEmpty + i] = macro.id;
-          //hand.push(macro.id);
+        console.log("Card In River: ", cards[i]);
+        let img = "";
+        if (cards[i]?.data != undefined) {
+          img =
+            defaultSideUp == "front"
+              ? cards[i].data.img
+              : cards[i].getFlag("world", "cardBack");
+          //img = defaultSideUp == "back" ? cards[i].getFlag("world","cardBack") : cards[i].data.img;
+          //console.debug("Card Hotbar | Invalid default card facing provided.");
         } else {
-          ui.notifications.error("Not enough space in the river. ");
-          ui.notifications.render();
-          reject("No more room in the river!");
-          break;
+          // THIS ELSE IS VERY IMPORTANT DO NOT DELETE IT!! @ Norc
+          //(For Players, when reciving JE, they won't have the full JE, only the data prop, which means no .data object)
+          img =
+            defaultSideUp == "front"
+              ? cards[i].img
+              : cards[i].flags.world.cardBack;
+          //img = defaultSideUp == "back" ? cards[i].getFlag("world","cardBack") : cards[i].data.img;
         }
+        let imgTex = await loadTexture(img);
+        let imgHeight = imgTex.height;
+        let imgWidth = imgTex.width;
+        let scaledWidth = (200 / imgHeight) * imgWidth;
+        let macro = await Macro.create({
+          name: `Player River Card`,
+          type: "script",
+          flags: {
+            world: {
+              cardID: cards[i]._id,
+              img:
+                cards[i]?.data != undefined
+                  ? cards[i].data.img
+                  : cards[i].img,
+              cardBack:
+                cards[i]?.data != undefined
+                  ? cards[i].data.flags.world.cardBack
+                  : cards[i].flags.world.cardBack,
+              sideUp: defaultSideUp,
+              scaledWidth: scaledWidth,
+              river: true,
+            },
+          },
+          scope: "global",
+          command: `
+                      new Dialog({
+                          title: "Player River Card",
+                          content: '<img src="${img}" />'
+                          ,
+                          buttons: {}
+                      }, {height:${imgHeight}, width:${imgWidth}}).render(true)
+                      `,
+          img: img,
+        });
+        hand[firstEmpty + i] = macro.id;
+        //hand.push(macro.id);
       }
-      this.macroMap = hand;
-      ui.cardHotbar.macros = ui.cardHotbar.getcardHotbarMacros();
-      await this._updateFlags();
-      ui.cardHotbar.render();
-      resolve();
+    this.macroMap = hand;
+    ui.cardHotbar.macros = ui.cardHotbar.getcardHotbarMacros();
+    await this._updateFlags();
+    ui.cardHotbar.render();
+    resolve();
     });
   }
 
@@ -230,16 +234,27 @@ export class cardHotbarPopulator {
     return new Promise(async (resolve, reject) => {
       let defaultSideUp = "front";
       let firstEmpty = this.getNextSlot();
+
       //preserve existing cards
       let hand = [];
       hand.length = this.macroMap.length;
-      if (this.macroMap.length != 0)
-      {
-        ui.cardHotbar.getcardHotbarMacros().forEach(element =>
+      for (let slot = 0; slot <= this.macroMap.length; slot++) {
+        //hand.push(this.macroMap[slot])
+        let macroId = this.macroMap[slot];
+
+        let macros = ui.cardHotbar.macros;
+        let journalEntries = [];
+        let skip = false;
+        macros.forEach(element =>
           {
-            if (element.macro && element.macro.data.flags.world && !element.macro.data.flags.world.river)
-              hand.push(element.macro.data.flags.world.cardID);
+              if (element.macro && element.macro.data.flags.world && element.macro.data.flags.world.river && element.macro.data._id == macroId)
+              {
+                 skip = true;
+              }
           });
+
+        if (!skip)
+          hand[slot] = macroId;
       }
 
       for (let i = 0; i < cards.length; i++) {
@@ -568,6 +583,7 @@ export class cardHotbarPopulator {
     //console.debug ("Card Hotbar | Checking macroMap for next available slot...");
     //have to perform some trickery so that the null at slot 0 is not picked up incorrectly.
     //functionally, this will return the actual slot number when 1 is added again at end.
+
     let slotCheck = this.macroMap.slice(1);
     const maxSlot = 54;
     slotCheck.length = maxSlot;
