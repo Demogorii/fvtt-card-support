@@ -279,22 +279,6 @@ export class cardHotbar extends Hotbar {
       //TODO: Add JQuery to visually deprecate edit card. Add dialogs
 
       //universal options
-      {
-        name: "Mark Card",
-        icon: '<i class="fas fa-highlighter"></i>',
-        condition: (li) => {
-          const macro = game.macros.get(li.data("macro-id"));
-          return macro ? macro.owner : false;
-        },
-        callback: async (li) => {
-          const macro = game.macros.get(li.data("macro-id"));
-          let curMark = macro.getFlag("world", "marked", 1);
-          curMark
-            ? await macro.setFlag("world", "marked", 0)
-            : await macro.setFlag("world", "marked", 1);
-        },
-      },
-
       //active options
       {
         name: "Reveal Card",
@@ -323,74 +307,6 @@ export class cardHotbar extends Hotbar {
           }
         },
       },
-      {
-        name: "Give to Player",
-        icon: '<i class="fas fa-exchange-alt"></i>',
-        condition: (li) => {
-          const macro = game.macros.get(li.data("macro-id"));
-          return macro ? macro.owner : false;
-        },
-        callback: (li) => {
-          const macro = game.macros.get(li.data("macro-id"));
-          let players = "";
-          //@ts-ignore
-          for (let user of game.users.contents) {
-            if (user.isSelf == false && user.active) {
-              players += `<option value=${user.id}>${user.name}</option>`;
-            }
-          }
-          let dialogHTML = `
-          <p> Player <select id="player">${players}</select> </p>
-          `;
-          new Dialog({
-            title: "Give Card to Player",
-            content: dialogHTML,
-            buttons: {
-              give: {
-                label: "Give",
-                callback: async (html) => {
-                  let _to = html.find("#player")[0].value;
-                  if (game.user.isGM) {
-                    game.decks.giveToPlayer(
-                      _to,
-                      macro.getFlag("world", "cardID")
-                    );
-                  } else {
-                    let msg = {
-                      type: "GIVE",
-                      playerID: game.users.find((el) => el.isGM && el.active)
-                        .id, //Send to GM for processing
-                      to: _to,
-                      cardID: game.macros
-                        .get(li.data("macro-id"))
-                        .getFlag("world", "cardID"),
-                    };
-                    game.socket.emit("module.cardsupport", msg);
-                  }
-                  let slot = this.populator.macroMap.indexOf(macro.id);
-                  await this.populator.chbUnsetMacro(slot);
-                },
-              },
-            },
-          }).render(true);
-        },
-      },
-      {
-        name: "Edit Card Macro",
-        icon: '<i class="fas fa-edit"></i>',
-        condition: (li) => {
-          const macro = game.macros.get(li.data("macro-id"));
-          if (macro) {
-            if (macro.getFlag("world", "sideUp") == "back") return false;
-          }
-          return macro ? macro.owner : false;
-        },
-        callback: (li) => {
-          const macro = game.macros.get(li.data("macro-id"));
-          macro.sheet.render(true);
-        },
-      },
-
       {
         name: "Flip Card",
         icon: '<i class="fas fa-undo"></i>',
@@ -441,41 +357,6 @@ export class cardHotbar extends Hotbar {
           } catch (e) {
             console.error(e);
             console.debug ("Card Hotbar | Could not properly discard card from hand");
-          }
-        },
-      },
-      {
-        name: "Delete",
-        icon: '<i class="icon-burn"></i>',
-        condition: (li) => {
-          const macro = game.macros.get(li.data("macro-id"));
-          return macro ? macro.owner : false;
-        },
-        callback: async (li) => {
-          const macro = game.macros.get(li.data("macro-id"));
-          const index = li.data("slot");
-          try {
-            new Dialog({
-              title: "Confirm",
-              content: `
-              <h2> Are you sure you want to burn this card? </h2>
-              `,
-              buttons: {
-                ok: {
-                  icon: "<i class='icon-burn'></i>",
-                  label: "Burn",
-                  callback: async () => {
-                    await ui.cardHotbar.populator.chbUnsetMacro(index);
-                  },
-                },
-                close: {
-                  label: "Close",
-                },
-              },
-            }).render(true);
-          } catch (e) {
-            console.error(e);
-            //console.debug ("Card Hotbar | Could not properly discard card from hand");
           }
         },
       },

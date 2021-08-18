@@ -18,6 +18,18 @@ export class cardHotbarPopulator {
     await this.addToPlayerHand(journalEntries);
   }
 
+  async addToHandOrRiver(cardIDs, river = false)
+  {
+    if (river)
+    {
+      await this.addToRiver(cardIDs);
+    }
+    else
+    {
+      await this.addToHand(cardIDs);
+    }
+  }
+
   async addToRiver(cardIDs) {
     //console.log("Add to Hand CardIDs", cardIDs);
     let journalEntries = [];
@@ -184,6 +196,12 @@ export class cardHotbarPopulator {
               : cards[i].flags.world.cardBack;
           //img = defaultSideUp == "back" ? cards[i].getFlag("world","cardBack") : cards[i].data.img;
         }
+
+        if (defaultSideUp == "front")
+        {
+            img = img.substring(0, img.length - 4) + "_river.png";
+        }
+        
         let imgTex = await loadTexture(img);
         let imgHeight = imgTex.height;
         let imgWidth = imgTex.width;
@@ -276,6 +294,11 @@ export class cardHotbarPopulator {
               : cards[i].flags.world.cardBack;
           //img = defaultSideUp == "back" ? cards[i].getFlag("world","cardBack") : cards[i].data.img;
         }
+        if (defaultSideUp == "front")
+        {
+          img = img.substring(0, img.length - 4) + "_river.png";
+        }
+
         let imgTex = await loadTexture(img);
         let imgHeight = imgTex.height;
         let imgWidth = imgTex.width;

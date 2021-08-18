@@ -67,8 +67,24 @@ async function cardHUD(tileHUD, html) {
   const takeCard = async (td) => {
     // UI.cardhotbar.populator.addToHand(cardID)
     // Delete this tile
-    ui["cardHotbar"].populator.addToHand([td.flags[mod_scope]["cardID"]]);
-    canvas.background.get(td._id).delete();
+    let successPromise = ui["cardHotbar"].populator.addToHandOrRiver([td.flags[mod_scope]["cardID"]], td.flags[mod_scope]["river"]);
+
+    successPromise.then(value =>
+      {
+        if (td.flags[mod_scope]["river"] == true)
+        {
+          game.river.push( game.journal.get(td.flags[mod_scope]["cardID"]));
+
+          let msg = {
+            type: "SYNC_RIVER",
+            river: game.river,
+          };
+          //@ts-ignore
+          game.socket.emit("module.cardsupport", msg);
+        }
+
+        canvas.background.get(td._id).delete();
+      });
   };
   const discardCard = async (td) => {
     // Add Card to Discard for the Deck
@@ -203,7 +219,7 @@ async function deckHUD(td, html) {
             if (html.find("#infiniteDraw")[0]?.checked) {
               for (let i = 0; i < numCards; i++) {
                 console.log("I: ", i);
-                let card = deck.infinteDraw();
+                let card = deck.infiniteDraw();
                 if (drawTable) {
                   console.debug("Card Hotbar | Drawing to table. FaceUp is: ");
                   let bool = cardHotbarSettings.getCHBDrawFaceUpTable();

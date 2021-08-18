@@ -88,7 +88,7 @@ async function deckHUD(td, html) {
             if (html.find("#infiniteDraw")[0]?.checked) {
               for (let i = 0; i < numCards; i++) {
                 console.log("I: ", i);
-                let card = deck.infinteDraw();
+                let card = deck.infiniteDraw();
                 if (drawTable) {
                   let tex = await loadTexture(
                     game.journal.get(card).data["img"]
@@ -221,7 +221,7 @@ async function deckHUD(td, html) {
             let _cardIDs = [];
             for (let i = 0; i < html.find("#numCards")[0].value; i++) {
               if (html.find("#infinite")[0].checked) {
-                _cardIDs.push(deck.infinteDraw());
+                _cardIDs.push(deck.infiniteDraw());
               } else {
                 _cardIDs.push(await deck.drawCard());
               }

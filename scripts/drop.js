@@ -135,6 +135,11 @@ export async function handleDroppedCard(cardID, x, y, alt, sideUp = "front", riv
     imgPath = game.journal.get(cardID).getFlag(mod_scope, "cardBack");
   } else {
     imgPath = game.journal.get(cardID).data["img"];
+
+    if (river)
+    {
+      imgPath = imgPath.substring(0, imgPath.length - 4) + "_river.png";
+    }
   }
 
   // Determine the Tile Size:
@@ -197,6 +202,7 @@ export async function handleDroppedCard(cardID, x, y, alt, sideUp = "front", riv
     flags: {
       [mod_scope]: {
         cardID: `${cardID}`,
+        river: river,
       },
     },
   });

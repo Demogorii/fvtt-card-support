@@ -4,7 +4,16 @@ export class Deck {
    * Builds a Deck Object
    * @param cardlist List of Journal Entry IDs that correspond to this deck
    */
-  constructor(folderID) {
+  constructor(folderIDOrDeck) {
+
+    if (folderIDOrDeck && typeof folderIDOrDeck != 'string')
+    {
+      Object.assign(this, folderIDOrDeck);
+      return;
+    }
+
+    let folderID = folderIDOrDeck;
+
     this.deckID = game.folders.get(folderID)._id;
     this.deckName = game.folders.get(folderID).name;
     let state = game.folders.get(folderID).getFlag(mod_scope, "deckState");
@@ -45,10 +54,12 @@ export class Deck {
         JSON.stringify(game.decks.decks)
       );
       //@ts-ignore
-      for (let user of game.users.entries()) {
+      for (let entry of game.users.entries()) {
+        let user = entry[1];
         if (user.isSelf) {
           continue;
         }
+
         //@ts-ignore
         game.socket.emit("module.cardsupport", {
           type: "SETDECKS",
@@ -149,7 +160,7 @@ export class Deck {
     await this.updateState();
     return card;
   }
-  infinteDraw() {
+  infiniteDraw() {
     let card = this._state[Math.floor(Math.random() * this._state.length)];
     return card;
   }
@@ -235,7 +246,7 @@ export class Deck {
       let cards = [];
       for (let i = 0; i < numCards; i++) {
         if (replacement) {
-          cards.push(game.journal.get(this.infinteDraw()));
+          cards.push(game.journal.get(this.infiniteDraw()));
         } else {
           cards.push(game.journal.get(await this.drawCard()));
         }
@@ -399,11 +410,9 @@ export class Decks {
       if (typeof ForgeVTT != "undefined" && ForgeVTT.usingTheForge) {
         src = "forgevtt";
       }
-      let target = `worlds/${game.world.name}/Decks/${deckfolderId}/`;
+      let target = `worlds/${game.world.id}/Decks/${deckfolderId}/`;
+      await FilePicker.createDirectory(src, target, {});
       let result = await FilePicker.browse(src, target);
-      if (result.target != target) {
-        await FilePicker.createDirectory(src, target, {});
-      }
       //Deal with Deck Img
       let deckImgPath = await uploadFile(target, deckImg);
       //Register the setting for the new deck
@@ -449,6 +458,12 @@ export class Decks {
           ui.notifications.error(`${card.name} is broken.`);
           continue;
         }
+
+        let riverVersion = card.img.substring(0, card.img.length - 4) + "_river.png";
+        let imgRiver = await deckZip.file(`images/${riverVersion}`)?.async("blob");
+        if(imgRiver != undefined)
+          await uploadFile(target, new File([imgRiver], riverVersion));
+
         let imgPath = await uploadFile(target, new File([img], card.img));
         let backPath = await uploadFile(
           target,
@@ -505,11 +520,12 @@ export class Decks {
       if (typeof ForgeVTT != "undefined" && ForgeVTT.usingTheForge) {
         src = "forgevtt";
       }
-      let target = `worlds/${game.world.name}/Decks/${deckfolderId}/`;
-      let result = await FilePicker.browse(src, target);
-      if (result.target != target) {
-        await FilePicker.createDirectory(src, target, {});
+      let target = `worlds/${game.world.id}/Decks/${deckfolderId}/`;
+      var fs = require('fs');
+      if (!fs.existsSync(target)){
+          fs.mkdirSync(target, { recursive: true });
       }
+      let result = await FilePicker.browse(src, target);
       //Deal with Deck Img
       let deckImgPath = await uploadFile(target, deckImg);
       //Register the setting for the new deck

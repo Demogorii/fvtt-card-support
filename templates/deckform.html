@@ -2,14 +2,11 @@
   {{#each decks}}
   <div style="display: flex">
     <span style="flex: 8"> {{this.deckName}} </span>
-    <a style="flex: 1" title="Draw Cards" id="{{this.deckID}}-draw"
+    <a style="flex: 1" title="Draw cards" id="{{this.deckID}}-draw"
       ><i class="icon-hand"></i
     ></a>
-    <a style="flex: 1" title="View Cards" id="{{this.deckID}}-view"
-      ><i class="fa fa-eye"></i
-    ></a>
-    <a style="flex: 1" title="Discard Pile" id="{{this.deckID}}-discard"
-      ><i class="fa fa-inbox"></i
+    <a style="flex: 1" title="Draw to river" id="{{this.deckID}}-drawriver"
+      ><i class="fab fa-confluence"></i
     ></a>
   </div>
   {{/each}}

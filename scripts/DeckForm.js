@@ -32,31 +32,24 @@ export class DeckForm extends Application {
         }
         let takeDialogTemplate = `
         <div style="display:flex; flex-direction:column">
-          <div style="display:flex; flex-direction:row">
-            <h2 style="flex:4"> How many cards? </h2>
-            <input type="number" id="numCards" value=1 style="width:50px"/>
-          </div>
-          <div style="display:flex; flex-direction:row">
-            <h2 style="flex:4"> Draw with Replacement? </h2>
-            <input type="checkbox" id="infiniteDraw"  style="flex:1"/>
-          </div>
+          <h3 style="flex:4">Draw regular card from deck?</h3>
           <input style="display:none" id="deckID" value=${deck.deckID} />
         </div>
         `;
         new Dialog({
-          title: "Draw Cards",
+          title: "Deck Action",
           content: takeDialogTemplate,
           buttons: {
             draw: {
-              label: "Draw",
+              label: "Confirm",
               callback: (html) => {
                 if (game.user.isGM) {
                   game.decks
                     .get(html.find("#deckID")[0].value)
                     .dealToPlayer(
                       game.user.id,
-                      html.find("#numCards")[0].value,
-                      html.find("#infiniteDraw")[0].checked
+                      1,
+                      false
                     );
                 } else {
                   let msg = {
@@ -64,105 +57,70 @@ export class DeckForm extends Application {
                     playerID: game.users.find((el) => el.isGM && el.active).id,
                     receiverID: game.user.id,
                     deckID: html.find("#deckID")[0].value,
-                    numCards: html.find("#numCards")[0].value,
-                    replacement: html.find("#infiniteDraw")[0].checked,
+                    numCards: 1,
+                    replacement: false,
                   }; //@ts-ignore
 
                   game.socket.emit("module.cardsupport", msg);
                 }
               },
             },
+            no: {
+              label: "Cancel",
+              callback: (html) => {
+
+                }
+              },
           },
         }).render(true);
-      }); //View Cards Listener
-
-      html.find(`#${deck.deckID}-view`).click(() => {
+      });
+      html.find(`#${deck.deckID}-drawriver`).click(() => {
         if (
           !game.user.isGM &&
-          !game.settings
-            .get("cardsupport", `${deck.deckID}-settings`)
-            ["viewDeck"].includes(game.user.id)
+          deck.deckName != "PlayerDeck"
         ) {
           ui.notifications.error("You don't have permission to do that.");
           return;
         }
-
-        let template = `
-        <div>
-          <p>
-          <h3> How many cards do you want to view? </h3>
-          <h3> Deck has ${
-            game.decks.get(deck.deckID)._state.length
-          } cards </h3>
-          <input id="numCards" value=1 type="number" style='width:50px;'/>
-          </p>
+        let takeDialogTemplate = `
+        <div style="display:flex; flex-direction:column">
+          <h3 style="flex:4">Draw card and add to River?</h3>
+          <input style="display:none" id="deckID" value=${deck.deckID} />
         </div>
         `;
         new Dialog({
-          title: "View Pile",
-          content: template,
+          title: "Deck Action",
+          content: takeDialogTemplate,
           buttons: {
-            view: {
-              label: "View",
+            draw: {
+              label: "Confirm",
               callback: (html) => {
                 if (game.user.isGM) {
-                  new ViewPile({
-                    deckID: deck.deckID,
-                    viewNum: html.find("#numCards")[0].value,
-                  }).render(true);
+                  game.decks
+                    .get(html.find("#deckID")[0].value)
+                    .addNewCardToRiverToAllPlayers();
                 } else {
-                  // send a socket request to request journal entries
                   let msg = {
-                    type: "REQUESTVIEWCARDS",
+                    type: "RIVER_ADD_REQ",
                     playerID: game.users.find((el) => el.isGM && el.active).id,
-                    requesterID: game.user.id,
-                    deckID: deck.deckID,
-                    viewNum: html.find("#numCards")[0].value,
+                    receiverID: game.user.id,
+                    deckID: html.find("#deckID")[0].value,
+                    numCards: 1,
+                    replacement: false,
                   }; //@ts-ignore
 
                   game.socket.emit("module.cardsupport", msg);
                 }
               },
             },
+            no: {
+              label: "Cancel",
+              callback: (html) => {
+
+                }
+              },
           },
         }).render(true);
-      }); //Discard Listener
-
-      html.find(`#${deck.deckID}-discard`).click(() => {
-        if (
-          !game.user.isGM &&
-          !game.settings
-            .get("cardsupport", `${deck.deckID}-settings`)
-            ["viewDiscard"].includes(game.user.id)
-        ) {
-          ui.notifications.error("You don't have permission to do that.");
-          return;
-        }
-
-        if (game.user.isGM) {
-          let discardPile = [];
-
-          for (let card of deck._discard) {
-            discardPile.push(game.journal.get(card));
-          }
-
-          new DiscardPile(
-            {
-              pile: discardPile,
-              deck: deck,
-            },
-            {}
-          ).render(true);
-        } else {
-          let msg = {
-            type: "REQUESTDISCARD",
-            playerID: game.users.find((el) => el.isGM && el.active).id,
-            deckID: deck.deckID,
-            requesterID: game.user.id,
-          }; //@ts-ignore
-
-          game.socket.emit("module.cardsupport", msg);
-        }
       });
     }
   }

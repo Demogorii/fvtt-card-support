@@ -1,5 +1,6 @@
 import { handleDroppedCard } from "./drop.js";
 import { ViewJournalPile, DiscardJournalPile } from "./DeckForm.js";
+import { Deck } from "./deck.js"
 Hooks.on("ready", () => {
   //@ts-ignore
   game.socket.on("module.cardsupport", async (data) => {
@@ -55,6 +56,18 @@ Hooks.on("ready", () => {
       game.decks.get(data.deckID);
     } else if (data?.type == "SETDECKS") {
       game.decks.decks = JSON.parse(game.settings.get("cardsupport", "decks"));
+      const playerdeckid = game.folders.find((el) => el.name == "PlayerDeck");
+      if (playerdeckid)
+      {
+        game.playerdeck = new Deck(game.decks.get(playerdeckid._id));
+      }
+
+      const gmdeckid = game.folders.find((el) => el.name == "GMDeck");
+      if (gmdeckid)
+      {
+        game.gmdeck = new Deck(game.decks.get(gmdeckid._id));
+      }
+
     } else if (data?.type == "DISCARD") {
       game.decks.getByCard(data.cardID).discardCard(data.cardID);
     } else if (data?.type == "GIVE") {
