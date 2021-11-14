@@ -59,13 +59,13 @@ Hooks.on("ready", () => {
       const playerdeckid = game.folders.find((el) => el.name == "PlayerDeck");
       if (playerdeckid)
       {
-        game.playerdeck = new Deck(game.decks.get(playerdeckid._id));
+        game.playerdeck._state = game.decks.get(playerdeckid._id)._state;
       }
 
       const gmdeckid = game.folders.find((el) => el.name == "GMDeck");
       if (gmdeckid)
       {
-        game.gmdeck = new Deck(game.decks.get(gmdeckid._id));
+        game.gmdeck._state = game.decks.get(gmdeckid._id)._state;
       }
 
     } else if (data?.type == "DISCARD") {

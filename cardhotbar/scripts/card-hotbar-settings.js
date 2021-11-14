@@ -116,7 +116,7 @@ export class cardHotbarSettings {
       hint: "cardHotbar.settings.chbXPos.nameHint",
       scope: "world",
       config: false,
-      default: "220",
+      default: "118",
       type: Number,
       onChange: (value) => {
         ui.cardHotbar.render();

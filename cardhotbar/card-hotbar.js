@@ -240,6 +240,25 @@ export class cardHotbar extends Hotbar {
     });
   }
 
+  async collapseForce() {
+    const controls = this.element.find("#card-hotbar-directory-controls");
+    const bar = this.element.find("#card-action-bar");
+    const icon = controls.find("#card-bar-toggle")[0].children[1];
+    return new Promise((resolve) => {
+      bar.slideUp(0, () => {
+        icon.classList.remove("fa-caret-down");
+        icon.classList.add("fa-caret-up");
+        controls.addClass("collapsed");
+        bar.addClass("collapsed");
+        ui.cardHotbar.element.addClass("collapsed");
+        this._collapsed = true;
+        let root = document.documentElement;
+        root.style.setProperty("--rawwidth", "0px");
+        resolve(true);
+      });
+    });
+  }
+
   /* -------------------------------------------- */
   /**
    * Expand the cardHotbar, displaying it normally.

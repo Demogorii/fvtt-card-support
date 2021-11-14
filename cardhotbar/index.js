@@ -25,12 +25,12 @@ async function cardHotbarInit() {
 
   var css =
       "#card-hotbar" +
-      ` { bottom: ${cardHotbarSettings.getCHBYPos()}px; ` +
+      ` { top: ${cardHotbarSettings.getCHBYPos()}px; ` +
       `   left: ${cardHotbarSettings.getCHBXPos()}px; ` +
       " }" +
       /*
-    + '#card-hotbar #card-macro-list' 
-    + ` {` 
+    + '#card-hotbar #card-macro-list'
+    + ` {`
     + `   border: 1px solid ${cardHotbarSettings.getCHBBorderColor()};`
     + ' }'
 */
@@ -67,7 +67,7 @@ async function cardHotbarInit() {
   let root = document.documentElement;
   root.style.setProperty(
     "--xoffset",
-    cardHotbarSettings.getCHBXPos() - 220 + "px"
+    cardHotbarSettings.getCHBXPos() - 118 + "px"
   );
 
   //  ui.hotbar.render();
@@ -85,7 +85,7 @@ async function cardHotbarInit() {
 
   //only trigger for card tiles
   const ogPlaceableObject = PlaceableObject.prototype._onDragLeftStart;
-  PlaceableObject.prototype._onDragLeftStart = function (...args) { 
+  PlaceableObject.prototype._onDragLeftStart = function (...args) {
   const e = args[0];
   let tokens = e.data.clones;
   if (tokens) {
@@ -174,21 +174,25 @@ Hooks.on("hotbarDrop", (hotbar, data, slot) => {
 
 Hooks.once("rendercardHotbar", () => {
   //console.debug("Card Hotbar | Performing initial collapse");
-  ui.cardHotbar.collapse();
+ // ui.cardHotbar.collapse();
 });
 
 Hooks.on("renderHotbar", async () => {
-  //console.debug("Card Hotbar | The core hotbar just rendered!");
+  console.debug("Card Hotbar | The core hotbar just rendered!");
 });
 
 Hooks.on("rendercardHotbar", async () => {
-  //console.debug("Card Hotbar | The card hotbar just rendered!");
+  console.debug("Card Hotbar | The card hotbar just rendered!");
+  if (ui.cardHotbar._collapsed)
+  {
+    ui.cardHotbar.collapseForce();
+  }
 });
 
 /* NOTE: ERRORS/ISSUES WITH CORE HOTBAR (LOL, SHRUG)
 0.6.5, DND 5E 0.94 (ALL MODS DISABLED)
 
-1. file directory to canvas: 
+1. file directory to canvas:
 foundry.js:29725 Uncaught (in promise) Error: No available Hotbar slot exists
 at User.assignHotbarMacro (foundry.js:29725)
 at Canvas._onDrop (foundry.js:11425)
